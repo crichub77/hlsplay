@@ -4,48 +4,35 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>CricHub</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orion+Esperanto+Dika&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Copperplate&display=swap" rel="stylesheet">
-  <link href="https://vjs.zencdn.net/7.19.2/video-js.css" rel="stylesheet" />
-  <script src="https://vjs.zencdn.net/7.19.2/video.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <title>Advanced Video Player</title>
   
+  <!-- Video.js CSS -->
+  <link href="https://vjs.zencdn.net/7.19.2/video-js.css" rel="stylesheet" />
+  <!-- Plyr CSS -->
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.6.8/plyr.css" />
+  
+  <!-- Video.js JS -->
+  <script src="https://vjs.zencdn.net/7.19.2/video.min.js"></script>
+  <!-- Plyr JS -->
+  <script src="https://cdn.plyr.io/3.6.8/plyr.polyfilled.js"></script>
+  <!-- HLS.js -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
   <style>
-    html {
-      font-family: 'Orion Esperanto Dika', sans-serif;
-      background: #000;
-      margin: 0;
-      padding: 0;
-      height: 100%;
-    }
     body {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
       height: 100vh;
+      background-color: #000;
       color: #DAA520;
-    }
-    #telegram-banner {
-      display: none; /* Initially hidden */
-      position: fixed;
-      top: 50%; /* Center vertically */
-      left: 50%;
-      transform: translate(-50%, -50%); /* Center horizontally */
-      background: black; /* Black background */
-      padding: 10px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-      z-index: 10000; /* Ensure the popup is above the player */
-      text-align: center;
-      width: 250px; /* Adjusted width */
     }
     #player {
       width: 100%;
       max-width: 800px; /* Set maximum width for the video player */
       height: auto; /* Maintain aspect ratio */
-      margin-top: 80px; /* Maintain space below the popup */
+      margin-top: 20px; /* Maintain space below the popup */
       border: 5px solid #DAA520; /* Solid neon dark yellow border */
       border-radius: 10px; /* Rounded corners for the border */
       box-shadow: 0 0 20px rgba(218, 165, 32, 0.7); /* Glowing effect */
@@ -66,21 +53,14 @@
       text-align: center;
       font-size: 24px;
     }
-    #telegram-banner h2 {
-      color: white; /* White text for the title */
-      margin-bottom:10px; /* Margin below the title */
-    }
-    #telegram-banner button {
-        background-color: green; /* Green for Join button */
+    button {
+        background-color:#DAA520; 
         color:white; 
         border:none; 
         padding:.5rem; 
         cursor:pointer; 
-        border-radius:.5rem
-    }
-    #telegram-banner .cancel-button {
-        background-color:red; /* Red for Cancel button */
-        margin-left:.5rem
+        border-radius:.5rem; 
+        margin-right:.5rem
     }
     marquee {
         background-color: darkgoldenrod; /* Dark yellow background */
@@ -91,19 +71,6 @@
         font-weight:bold; 
         border-radius:.5rem
     }
-    
-    .quality-menu {
-        position:absolute; 
-        top:-40px; 
-        left:-20px; 
-        z-index:-1
-    }
-
-    .quality-menu button {
-        margin-right:.5rem
-    }
-
-    
 </style>
 </head>
 <body>
@@ -112,72 +79,107 @@
     <div class="loading-text">Loading CricHub...</div>
 </div>
 
-<div id="telegram-banner">
-    <h2>Join CricHub Telegram Channel</h2>
-    <button onclick="window.open('https://t.me/+_AupOjqXiLNlNmY1', '_blank')">Join</button>
-    <button class="cancel-button" onclick="document.getElementById('telegram-banner').style.display='none'">Cancel</button>
-</div>
-
-<video id="player" class="video-js vjs-big-play-centered" controls preload="auto" width="640" height="264" crossorigin>
+<video id="videojs-player" class="video-js vjs-big-play-centered" controls preload="auto" crossorigin>
     Your browser does not support HTML5 video.
 </video>
+
+<div id="plyr-container" style="display:none;">
+    <video id="plyr-player" controls crossorigin>
+        Your browser does not support HTML5 video.
+    </video>
+</div>
+
+<div id="quality-selector">
+    <button onclick="setQuality('360p')">360p</button>
+    <button onclick="setQuality('480p')">480p</button>
+    <button onclick="setQuality('720p')">720p</button>
+    <button onclick="setQuality('1080p')">1080p</button>
+</div>
 
 <marquee behavior="scroll" direction="left"> "JOIN CricHub TELEGRAM CHANNEL FOR ALL SPORTS LIVE LINKS"🔗❤️ </marquee>
 
 <script>
+// Initialize Video.js Player
+const videojsPlayer = videojs('videojs-player');
+
+// Initialize Plyr Player
+const plyrPlayer = new Plyr('#plyr-player');
+
+// Function to switch between players
+function switchToPlayer(playerType) {
+    if (playerType === 'videojs') {
+        document.getElementById('videojs-player').style.display = 'block';
+        document.getElementById('plyr-container').style.display = 'none';
+        videojsPlayer.play();
+    } else {
+        document.getElementById('videojs-player').style.display = 'none';
+        document.getElementById('plyr-container').style.display = 'block';
+        plyrPlayer.play();
+    }
+}
+
+// Load HLS stream
+function loadStream(url) {
+    if (Hls.isSupported()) {
+        const hls = new Hls();
+        
+        hls.loadSource(url);
+        
+        // Attach HLS to Video.js player
+        hls.attachMedia(videojsPlayer.tech().el());
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            videojsPlayer.play();
+            document.getElementById('loading').style.display = 'none'; // Hide loading after video is ready
+        });
+        
+        // Attach HLS to Plyr player
+        hls.attachMedia(plyrPlayer.media);
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            plyrPlayer.play();
+            document.getElementById('loading').style.display = 'none'; // Hide loading after video is ready
+        });
+        
+    } else if (plyrPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+        plyrPlayer.source = { type : 'video/mp4', src : url };
+    }
+}
+
+// Quality selection logic
+function setQuality(quality) {
+   let sourceUrl;
+
+   switch (quality) {
+       case '360p':
+           sourceUrl = 'https://path/to/your/stream_360p.m3u8';
+           break;
+       case '480p':
+           sourceUrl = 'https://path/to/your/stream_480p.m3u8';
+           break;
+       case '720p':
+           sourceUrl = 'https://path/to/your/stream_720p.m3u8';
+           break;
+       case '1080p':
+           sourceUrl = 'https://path/to/your/stream_1080p.m3u8';
+           break;
+       default:
+           return;
+   }
+
+   loadStream(sourceUrl);
+}
+
+// Get the video URL from the query parameters
 var urlParams = new URLSearchParams(window.location.search);
 var videoUrl = urlParams.get("videoUrl");
 
-const player = videojs('player', {
-    controls: true,
-});
+// Load the initial stream
+loadStream(videoUrl);
 
-// Check if HLS is supported
-if (Hls.isSupported()) {
-    
-   const hls = new Hls();
-   
-   // Load multiple quality options
-   const sources = [
-       { src:'https://path/to/your/stream_360p.m3u8', label:'360p', type:'application/x-mpegURL' },
-       { src:'https://path/to/your/stream_480p.m3u8', label:'480p', type:'application/x-mpegURL' },
-       { src:'https://path/to/your/stream_720p.m3u8', label:'720p', type:'application/x-mpegURL' },
-       { src:'https://path/to/your/stream_1080p.m3u8', label:'1080p', type:'application/x-mpegURL' },
-   ];
-
-   // Create a quality selection menu
-   const qualityMenu = document.createElement('div');
-   qualityMenu.className = 'quality-menu';
-   sources.forEach(source => {
-       const button = document.createElement('button');
-       button.innerText = source.label;
-
-       button.onclick = () => {
-           hls.loadSource(source.src);
-           hls.attachMedia(player.tech().el());
-           player.play();
-       };
-
-       qualityMenu.appendChild(button);
-   });
-   document.body.appendChild(qualityMenu);
-
-   hls.loadSource(videoUrl);
-   hls.attachMedia(player.tech().el());
-   hls.on(Hls.Events.MANIFEST_PARSED, function() {
-       player.play();
-   });
-} else if (player.tech().el().canPlayType('application/vnd.apple.mpegurl')) {
-   player.src({ src : videoUrl, type : 'application/x-mpegURL' });
-}
-
-player.on('ready', function() {
-   document.getElementById('loading').style.display = 'none';
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-   document.getElementById('telegram-banner').style.display = 'block';
-});
+// Switch to the desired player (Video.js or Plyr)
+// Example usage:
+// switchToPlayer('videojs'); // or switchToPlayer('plyr');
 </script>
 
 </body>
