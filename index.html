@@ -7,61 +7,86 @@
   <title>CricHub</title>
   <link href="https://fonts.googleapis.com/css2?family=Orion+Esperanto+Dika&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Copperplate&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+  <link href="https://vjs.zencdn.net/7.19.2/video-js.css" rel="stylesheet" />
+  <script src="https://vjs.zencdn.net/7.19.2/video.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     /* Your existing styles */
+    body {
+      background: #000;
+      color: #DAA520;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+    }
+    #player {
+      width: 100%;
+      max-width: 800px;
+      margin-top: 80px;
+    }
+    .loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #telegram-banner {
+      display: none; /* Initially hidden */
+    }
   </style>
 </head>
 <body>
-  <div id="loading" class="loading">
-    <div class="loading-text">Loading CricHub...</div>
-  </div>
 
-  <div id="telegram-banner">
+<div id="loading" class="loading">
+    <div class="loading-text">Loading CricHub...</div>
+</div>
+
+<div id="telegram-banner">
     <h2>Join CricHub Telegram Channel</h2>
     <button onclick="window.open('https://t.me/+_AupOjqXiLNlNmY1', '_blank')">Join</button>
     <button class="cancel-button" onclick="document.getElementById('telegram-banner').style.display='none'">Cancel</button>
-  </div>
+</div>
 
-  <video id="player" controls crossorigin playsinline>
-      Your browser does not support HTML5 video.
-  </video>
+<video id="player" class="video-js" controls preload="auto" width="640" height="264" crossorigin>
+    Your browser does not support HTML5 video.
+</video>
 
-  <marquee behavior="scroll" direction="left">
-    "JOIN CricHub TELEGRAM CHANNEL FOR ALL SPORTS LIVE LINKS"🔗❤️
-  </marquee>
+<marquee behavior="scroll" direction="left"> "JOIN CricHub TELEGRAM CHANNEL FOR ALL SPORTS LIVE LINKS"🔗❤️ </marquee>
 
-  <script>
+<script>
     var urlParams = new URLSearchParams(window.location.search);
-    var maxvalue = urlParams.get("videoUrl") || 'https://example.com/path/to/default/video.m3u8';
+    var videoUrl = urlParams.get("videoUrl");
 
-    const player = new Plyr('#player', {
-        // Additional options can be configured here
-    });
+    const player = videojs('player');
 
     if (Hls.isSupported()) {
         const hls = new Hls();
-        hls.loadSource(maxvalue);
-        hls.attachMedia(player.media);
+        hls.loadSource(videoUrl);
+        hls.attachMedia(player.tech().el());
         hls.on(Hls.Events.MANIFEST_PARSED, function() {
             player.play();
         });
-    } else if (player.media.canPlayType('application/vnd.apple.mpegurl')) {
-        player.media.src = maxvalue;
-        player.media.addEventListener('loadedmetadata', function() {
-            player.play();
-        });
+    } else if (player.tech().el().canPlayType('application/vnd.apple.mpegurl')) {
+        player.src({ src: videoUrl, type: 'application/x-mpegURL' });
+        player.play();
     }
 
     player.on('ready', function() {
-      document.getElementById('loading').style.display = 'none';
+        document.getElementById('loading').style.display = 'none';
     });
 
     document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('telegram-banner').style.display = 'block';
+        document.getElementById('telegram-banner').style.display = 'block';
     });
-  </script>
+</script>
+
 </body>
 </html>
