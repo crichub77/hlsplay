@@ -10,21 +10,45 @@
   <link href="https://vjs.zencdn.net/7.19.2/video-js.css" rel="stylesheet" />
   <script src="https://vjs.zencdn.net/7.19.2/video.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  
   <style>
-    /* Your existing styles */
-    body {
+    html {
+      font-family: 'Orion Esperanto Dika', sans-serif;
       background: #000;
-      color: #DAA520;
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+    body {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
       height: 100vh;
+      color: #DAA520;
+    }
+    #telegram-banner {
+      display: none; /* Initially hidden */
+      position: fixed;
+      top: 50%; /* Center vertically */
+      left: 50%;
+      transform: translate(-50%, -50%); /* Center horizontally */
+      background: black; /* Black background */
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      z-index: 10000; /* Ensure the popup is above the player */
+      text-align: center;
+      width: 250px; /* Adjusted width */
     }
     #player {
       width: 100%;
-      max-width: 800px;
-      margin-top: 80px;
+      max-width: 800px; /* Set maximum width for the video player */
+      height: auto; /* Maintain aspect ratio */
+      margin-top: 80px; /* Maintain space below the popup */
+      border: 5px solid #DAA520; /* Solid neon dark yellow border */
+      border-radius: 10px; /* Rounded corners for the border */
+      box-shadow: 0 0 20px rgba(218, 165, 32, 0.7); /* Glowing effect */
     }
     .loading {
       position: fixed;
@@ -38,10 +62,49 @@
       align-items: center;
       justify-content: center;
     }
-    #telegram-banner {
-      display: none; /* Initially hidden */
+    .loading-text {
+      text-align: center;
+      font-size: 24px;
     }
-  </style>
+    #telegram-banner h2 {
+      color: white; /* White text for the title */
+      margin-bottom:10px; /* Margin below the title */
+    }
+    #telegram-banner button {
+        background-color: green; /* Green for Join button */
+        color:white; 
+        border:none; 
+        padding:.5rem; 
+        cursor:pointer; 
+        border-radius:.5rem
+    }
+    #telegram-banner .cancel-button {
+        background-color:red; /* Red for Cancel button */
+        margin-left:.5rem
+    }
+    marquee {
+        background-color: darkgoldenrod; /* Dark yellow background */
+        color:black; 
+        width:100%; 
+        padding:.5rem; 
+        font-family:'Georgia', serif; 
+        font-weight:bold; 
+        border-radius:.5rem
+    }
+    
+    .quality-menu {
+        position:absolute; 
+        top:-40px; 
+        left:-20px; 
+        z-index:-1
+    }
+
+    .quality-menu button {
+        margin-right:.5rem
+    }
+
+    
+</style>
 </head>
 <body>
 
@@ -55,37 +118,66 @@
     <button class="cancel-button" onclick="document.getElementById('telegram-banner').style.display='none'">Cancel</button>
 </div>
 
-<video id="player" class="video-js" controls preload="auto" width="640" height="264" crossorigin>
+<video id="player" class="video-js vjs-big-play-centered" controls preload="auto" width="640" height="264" crossorigin>
     Your browser does not support HTML5 video.
 </video>
 
 <marquee behavior="scroll" direction="left"> "JOIN CricHub TELEGRAM CHANNEL FOR ALL SPORTS LIVE LINKS"🔗❤️ </marquee>
 
 <script>
-    var urlParams = new URLSearchParams(window.location.search);
-    var videoUrl = urlParams.get("videoUrl");
+var urlParams = new URLSearchParams(window.location.search);
+var videoUrl = urlParams.get("videoUrl");
 
-    const player = videojs('player');
+const player = videojs('player', {
+    controls: true,
+});
 
-    if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(videoUrl);
-        hls.attachMedia(player.tech().el());
-        hls.on(Hls.Events.MANIFEST_PARSED, function() {
-            player.play();
-        });
-    } else if (player.tech().el().canPlayType('application/vnd.apple.mpegurl')) {
-        player.src({ src: videoUrl, type: 'application/x-mpegURL' });
-        player.play();
-    }
+// Check if HLS is supported
+if (Hls.isSupported()) {
+    
+   const hls = new Hls();
+   
+   // Load multiple quality options
+   const sources = [
+       { src:'https://path/to/your/stream_360p.m3u8', label:'360p', type:'application/x-mpegURL' },
+       { src:'https://path/to/your/stream_480p.m3u8', label:'480p', type:'application/x-mpegURL' },
+       { src:'https://path/to/your/stream_720p.m3u8', label:'720p', type:'application/x-mpegURL' },
+       { src:'https://path/to/your/stream_1080p.m3u8', label:'1080p', type:'application/x-mpegURL' },
+   ];
 
-    player.on('ready', function() {
-        document.getElementById('loading').style.display = 'none';
-    });
+   // Create a quality selection menu
+   const qualityMenu = document.createElement('div');
+   qualityMenu.className = 'quality-menu';
+   sources.forEach(source => {
+       const button = document.createElement('button');
+       button.innerText = source.label;
 
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('telegram-banner').style.display = 'block';
-    });
+       button.onclick = () => {
+           hls.loadSource(source.src);
+           hls.attachMedia(player.tech().el());
+           player.play();
+       };
+
+       qualityMenu.appendChild(button);
+   });
+   document.body.appendChild(qualityMenu);
+
+   hls.loadSource(videoUrl);
+   hls.attachMedia(player.tech().el());
+   hls.on(Hls.Events.MANIFEST_PARSED, function() {
+       player.play();
+   });
+} else if (player.tech().el().canPlayType('application/vnd.apple.mpegurl')) {
+   player.src({ src : videoUrl, type : 'application/x-mpegURL' });
+}
+
+player.on('ready', function() {
+   document.getElementById('loading').style.display = 'none';
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+   document.getElementById('telegram-banner').style.display = 'block';
+});
 </script>
 
 </body>
